@@ -15,7 +15,7 @@ the human node rendering is intended for the real-time simulation of the system 
 
 class CartPole_v1():
     
-    def __init__(self, n_obs = 1000, n_split = [[4,5,10,12]], sim = True, PLOT_DEBUG = False):
+    def __init__(self, n_obs = 1000, n_split = [4,5,10,12], sim = True, PLOT_DEBUG = False):
         self.env_name = 'CartPole-v1'
         if(sim):
             self.env =  gym.make(self.env_name, render_mode='rgb_array')   # for simulation
@@ -50,7 +50,7 @@ class CartPole_v1():
         print("done") 
         return obs_list
         
-    def intervals_split(start, finish, parts):
+    def intervals_split(self, start, finish, parts):
             '''
             function that, given an interval and the number of split to apply, 
             return a list of intervals equalli separated by the number of split given as input
@@ -76,11 +76,9 @@ class CartPole_v1():
         continous state space associate to the observations. However, this will negatively have an impact on the number 
         of episode needed by the algorithm to learn a correct policy
         '''
-        n_split = [4,5,10,12]  # with 3 splits there are 5 intervals created, since two are that one that deal with +- infty
-
         for k in range(len(states)):
             extrema.append([np.min(states[k]), np.max(states[k])])
-            self.intervals.append(self.intervals_split(extrema[k][0], extrema[k][1], n_split[k]))
+            self.intervals.append(self.intervals_split(extrema[k][0], extrema[k][1], self.n_split[k]))
             
         if(self.PLOT_DEBUG):   
             y = [0,0.5,1,1.5]
@@ -95,20 +93,20 @@ class CartPole_v1():
                     plt.plot(self.intervals[k][i], y[k], '|', color = 'red', markersize=5)
                     
             plt.show()
+        print("done")
 
         
-    def state_projection(self, value, intervals):
+    def state_projection(self, value):
         '''
         This function associate to each state observation a unique positive integer value, useful
         for constructing the Q_table
         '''
-        #print(value)
-        #print(len(value))
+    
         discrete_state = []
         n_digits = []
         for k in range(len(value)):
-            discrete_state.append(np.digitize(value[k], intervals[k])) # the k-th state description with the k-th intervals split
-            n_digits.append(len(str(np.digitize(value[k], intervals[k]))))
+            discrete_state.append(np.digitize(value[k], self.intervals[k])) # the k-th state description with the k-th intervals split
+            n_digits.append(len(str(np.digitize(value[k], self.intervals[k]))))
         discrete_state = discrete_state[0]+discrete_state[1]*(self.n_split[0]+2)+discrete_state[2]*(self.n_split[0]+2)*(self.n_split[1]+2)+discrete_state[3]*(self.n_split[0]+2)*(self.n_split[1]+2)*(self.n_split[2]+2)
         
         return discrete_state
