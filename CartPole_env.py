@@ -15,7 +15,7 @@ the human node rendering is intended for the real-time simulation of the system 
 
 class CartPole_v1():
     
-    def __init__(self, n_obs = 1000, n_split = [4,5,10,12], sim = True, PLOT_DEBUG = False):
+    def __init__(self, n_obs = 1000, n_split = [4,5,10,12], sim = True, PLOT_DEBUG = False, with_experience = False):
         self.env_name = 'CartPole-v1'
         if(sim):
             self.env =  gym.make(self.env_name, render_mode='rgb_array')   # for simulation
@@ -25,6 +25,8 @@ class CartPole_v1():
         self.n_obs = n_obs
         self.intervals = []
         self.PLOT_DEBUG = PLOT_DEBUG
+        self.experience = with_experience
+        
         self.discrete_bucket()
 
     def making_experience(self):
@@ -35,7 +37,6 @@ class CartPole_v1():
         of four continous time variable. In order to apply RL method such as MC it is nedeed to espress this state in a discrete world.
         This cell analyze which are the most common output coming from the environment running 000 action in different states. 
         '''
-        
         obs_list = []
         observation, info = self.env.reset()
         obs_list.append(observation)
@@ -49,7 +50,7 @@ class CartPole_v1():
                 observation, info = self.env.reset()
         print("done") 
         return obs_list
-        
+    
     def intervals_split(self, start, finish, parts):
             '''
             function that, given an interval and the number of split to apply, 
@@ -59,39 +60,61 @@ class CartPole_v1():
             return [start+i * part_duration for i in range(parts+1)]
         
     def discrete_bucket(self):
-        obs_list = self.making_experience()
-        print("discretizing the environment ... ")
         
-        states = [[], [], [], []]
-        for k in range(len(obs_list)):
-            states[0].append(obs_list[k][0])
-            states[1].append(obs_list[k][1])
-            states[2].append(obs_list[k][2])
-            states[3].append(obs_list[k][3])
-            
-        # took the extrema from the simulations 
-        extrema = []
-        '''
-        This is an important parameter to set: increasing the number of split we are more accurate into discretize the 
-        continous state space associate to the observations. However, this will negatively have an impact on the number 
-        of episode needed by the algorithm to learn a correct policy
-        '''
-        for k in range(len(states)):
-            extrema.append([np.min(states[k]), np.max(states[k])])
-            self.intervals.append(self.intervals_split(extrema[k][0], extrema[k][1], self.n_split[k]))
-            
-        if(self.PLOT_DEBUG):   
-            y = [0,0.5,1,1.5]
+        if(self.experience):
+            obs_list = self.making_experience()
+            print("discretizing the environment ... ")
+            states = [[], [], [], []]
             for k in range(len(obs_list)):
-                plt.plot(obs_list[k][0], y[0], 'o', color='gray', alpha = 0.05)
-                plt.plot(obs_list[k][1], y[1], 'o', color='gray', alpha = 0.05)
-                plt.plot(obs_list[k][2], y[2], 'o', color='gray', alpha = 0.05)
-                plt.plot(obs_list[k][3], y[3], 'o', color='gray', alpha = 0.05)
+                states[0].append(obs_list[k][0])
+                states[1].append(obs_list[k][1])
+                states[2].append(obs_list[k][2])
+                states[3].append(obs_list[k][3])
                 
+            # took the extrema from the simulations 
+            extrema = []
+            '''
+            This is an important parameter to set: increasing the number of split we are more accurate into discretize the 
+            continous state space associate to the observations. However, this will negatively have an impact on the number 
+            of episode needed by the algorithm to learn a correct policy
+            '''
             for k in range(len(states)):
-                for i in range(len(self.intervals[k])):
-                    plt.plot(self.intervals[k][i], y[k], '|', color = 'red', markersize=5)
+                extrema.append([np.min(states[k]), np.max(states[k])])
+                self.intervals.append(self.intervals_split(extrema[k][0], extrema[k][1], self.n_split[k]))
+            if(self.PLOT_DEBUG):   
+                y = [0,0.5,1,1.5]
+                for k in range(len(obs_list)):
+                    plt.plot(obs_list[k][0], y[0], 'o', color='gray', alpha = 0.05)
+                    plt.plot(obs_list[k][1], y[1], 'o', color='gray', alpha = 0.05)
+                    plt.plot(obs_list[k][2], y[2], 'o', color='gray', alpha = 0.05)
+                    plt.plot(obs_list[k][3], y[3], 'o', color='gray', alpha = 0.05)
                     
+                for k in range(len(states)):
+                    for i in range(len(self.intervals[k])):
+                        plt.plot(self.intervals[k][i], y[k], '|', color = 'red', markersize=5)
+                        
+            
+        else:
+            print("discretizing the environment ... ")
+            # approximated value of the state of the environment
+            self.intervals.append(np.linspace(-2.4, 2.4, self.n_split[0]+1)[1:-1]) # state 0
+            self.intervals.append(np.linspace(-3, 3, self.n_split[1]+1)[1:-1])     # state 1
+            self.intervals.append(np.linspace(-0.5, 0.5, self.n_split[2]+1)[1:-1]) # state 2
+            self.intervals.append(np.linspace(-3, 3, self.n_split[3]+1)[1:-1])     # state 3
+            if(self.PLOT_DEBUG):   
+                y = [0,0.5,1,1.5]
+                for k in range(4):  # n° of states
+                    for i in range(len(self.intervals[k])):
+                        plt.plot(self.intervals[k][i], y[k], '|', color = 'red', markersize=20)
+                plt.axhline(y[0], color='gray', label='env threshold = 195.0', linestyle='--')
+                plt.axhline(y[1], color='gray', label='env threshold = 195.0', linestyle='--')
+                plt.axhline(y[2], color='gray', label='env threshold = 195.0', linestyle='--')
+                plt.axhline(y[3], color='gray', label='env threshold = 195.0', linestyle='--')       
+
+
+                    
+            
+        
             plt.show()
         print("done")
 
@@ -101,13 +124,10 @@ class CartPole_v1():
         This function associate to each state observation a unique positive integer value, useful
         for constructing the Q_table
         '''
-    
         discrete_state = []
-        n_digits = []
         for k in range(len(value)):
             discrete_state.append(np.digitize(value[k], self.intervals[k])) # the k-th state description with the k-th intervals split
-            n_digits.append(len(str(np.digitize(value[k], self.intervals[k]))))
-        discrete_state = discrete_state[0]+discrete_state[1]*(self.n_split[0]+2)+discrete_state[2]*(self.n_split[0]+2)*(self.n_split[1]+2)+discrete_state[3]*(self.n_split[0]+2)*(self.n_split[1]+2)*(self.n_split[2]+2)
+        discrete_state = discrete_state[0]+discrete_state[1]*(self.n_split[0])+discrete_state[2]*(self.n_split[0])*(self.n_split[1])+discrete_state[3]*(self.n_split[0])*(self.n_split[1])*(self.n_split[2])
         
         return discrete_state
 
