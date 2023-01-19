@@ -7,7 +7,7 @@ from mpl_toolkits import mplot3d
 import time 
 import math
 from tqdm import tqdm
-
+import pandas as pd
 '''
 This cell will load the environment and select the render mode for the simulation, since it is not time consuming; 
 the human node rendering is intended for the real-time simulation of the system (reported at the end of the monte-carlo section)
@@ -23,6 +23,8 @@ class CartPole_v1():
             self.env = gym.make(self.env_name, render_mode='human')         # for rendering    
         self.n_split = n_split 
         self.n_obs = n_obs
+        self.upper_bounds = [self.env.observation_space.high[0], 0.5, self.env.observation_space.high[2], math.radians(50) / 1.]
+        self.lower_bounds = [self.env.observation_space.low[0], -0.5, self.env.observation_space.low[2], -math.radians(50) / 1.]
         self.intervals = []
         self.PLOT_DEBUG = PLOT_DEBUG
         self.experience = with_experience
@@ -97,10 +99,11 @@ class CartPole_v1():
         else:
             print("discretizing the environment ... ")
             # approximated value of the state of the environment
-            self.intervals.append(np.linspace(-2.4, 2.4, self.n_split[0]+1)[1:-1]) # state 0
-            self.intervals.append(np.linspace(-3, 3, self.n_split[1]+1)[1:-1])     # state 1
-            self.intervals.append(np.linspace(-0.5, 0.5, self.n_split[2]+1)[1:-1]) # state 2
-            self.intervals.append(np.linspace(-3, 3, self.n_split[3]+1)[1:-1])     # state 3
+            
+            self.intervals.append(np.linspace(self.lower_bounds[0], self.upper_bounds[0], self.n_split[0]+1)[1:-1]) # state 0
+            self.intervals.append(np.linspace(self.lower_bounds[1], self.upper_bounds[1], self.n_split[1]+1)[1:-1])     # state 1
+            self.intervals.append(np.linspace(self.lower_bounds[2], self.upper_bounds[2], self.n_split[2]+1)[1:-1]) # state 2
+            self.intervals.append(np.linspace(self.lower_bounds[3], self.upper_bounds[3], self.n_split[3]+1)[1:-1])     # state 3
             if(self.PLOT_DEBUG):   
                 y = [0,0.5,1,1.5]
                 for k in range(4):  # n° of states
@@ -111,11 +114,8 @@ class CartPole_v1():
                 plt.axhline(y[2], color='gray', label='env threshold = 195.0', linestyle='--')
                 plt.axhline(y[3], color='gray', label='env threshold = 195.0', linestyle='--')       
 
-
-                    
-            
-        
             plt.show()
+            
         print("done")
 
         
@@ -131,4 +131,4 @@ class CartPole_v1():
         
         return discrete_state
 
-
+  
