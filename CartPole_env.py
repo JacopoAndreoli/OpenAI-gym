@@ -130,5 +130,3 @@ class CartPole_v1():
         discrete_state = discrete_state[0]+discrete_state[1]*(self.n_split[0])+discrete_state[2]*(self.n_split[0])*(self.n_split[1])+discrete_state[3]*(self.n_split[0])*(self.n_split[1])*(self.n_split[2])
         
         return discrete_state
-
-  
